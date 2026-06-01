@@ -1,0 +1,49 @@
+# nginx.conf.template for Azure Easy Auth + Google JWT pattern.
+#
+# Environment variables substituted at container start:
+#   ALLOWED_EMAIL  — the single Google account email to permit (add more map entries as needed)
+#
+# How it works:
+#   Easy Auth sets X-MS-CLIENT-PRINCIPAL-NAME to the authenticated Google email.
+#   nginx checks that value against the allowlist; non-matching emails get 403.
+#
+# Local dev note:
+#   X-MS-CLIENT-PRINCIPAL-NAME is absent without Easy Auth, so all requests
+#   return 403. Test the backend directly at http://localhost:8000 instead.
+
+map $http_x_ms_client_principal_name $access_denied {
+    default                  1;
+    "user@example.com"       0;
+    # Add more allowed emails here:
+    # "other@example.com"    0;
+}
+
+server {
+    listen      80;
+    server_name _;
+
+    if ($access_denied) {
+        return 403;
+    }
+
+    location / {
+        root  /usr/share/nginx/html;
+        index index.html;
+        try_files $uri $uri/ =404;
+    }
+
+    # Example: proxy an API endpoint to the backend container.
+    # Duplicate this block for each API path your app exposes.
+    #
+    # location /api {
+    #     proxy_pass            ${BACKEND_UPSTREAM}/api;
+    #     proxy_http_version    1.1;
+    #     proxy_ssl_verify      off;
+    #     proxy_ssl_server_name on;
+    #     proxy_set_header      Host             $proxy_host;
+    #     proxy_set_header      X-Real-IP        $remote_addr;
+    #     proxy_set_header      X-Forwarded-For  $proxy_add_x_forwarded_for;
+    #     proxy_read_timeout    120s;
+    #     client_max_body_size  20m;
+    # }
+}

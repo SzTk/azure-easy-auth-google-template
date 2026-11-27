@@ -1,0 +1,9 @@
+{
+  "name": "azure-easy-auth-google",
+  "version": "0.1.0",
+  "description": "Azure Container Apps に Google アカウントの許可リスト付き4層認証（Easy Auth + nginx + GSI + バックエンドでの JWT 検証）を入れるパターンと参照実装",
+  "author": { "name": "SzTk" },
+  "license": "MIT-0",
+  "repository": "https://github.com/SzTk/azure-easy-auth-google-template",
+  "keywords": ["azure", "container-apps", "easy-auth", "google", "jwt", "fastapi", "nginx"]
+}

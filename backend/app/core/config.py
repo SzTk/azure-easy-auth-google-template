@@ -7,7 +7,8 @@ class Settings(BaseSettings):
     # JWT / OIDC auth (disabled by default for local dev and tests)
     auth_enabled: bool = False
     google_client_id: str = ""
-    # Comma-separated list; also accepts a JSON array via env var
+    # Set via env var as a JSON array, e.g. ALLOWED_EMAILS='["a@example.com","b@example.com"]'.
+    # A comma-separated string is NOT accepted (pydantic-settings raises SettingsError).
     allowed_emails: list[str] = []
 
 

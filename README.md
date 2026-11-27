@@ -2,6 +2,17 @@
 
 Multi-layer authentication pattern for web apps deployed on **Azure Container Apps** with a Google account allowlist.
 
+## Use as a Claude Code plugin
+
+This repository is also a Claude Code plugin. Its skill (`skills/azure-easy-auth-google/SKILL.md`) guides an agent through applying this pattern to another project, using the files here as the reference implementation.
+
+```
+/plugin marketplace add SzTk/claude-patterns
+/plugin install azure-easy-auth-google@claude-patterns
+```
+
+To pick up a new version: `/plugin marketplace update claude-patterns`.
+
 ## Architecture
 
 ```
@@ -62,6 +73,8 @@ AUTH_ENABLED=true
 GOOGLE_CLIENT_ID=<your-client-id>.apps.googleusercontent.com
 ALLOWED_EMAILS=["you@example.com"]
 ```
+
+`ALLOWED_EMAILS` must be a JSON array. A comma-separated string fails at startup with a pydantic-settings `SettingsError`.
 
 ### 3. Frontend
 

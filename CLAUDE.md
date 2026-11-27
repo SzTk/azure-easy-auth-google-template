@@ -1,37 +1,35 @@
 # CLAUDE.md
 
-This repository is a **reusable template** for the Azure Easy Auth + Google JWT multi-layer authentication pattern.
+This repository is both:
 
-## What this template provides
+1. **A reference implementation** of the Azure Easy Auth + Google JWT 4-layer auth pattern (`backend/`, `frontend/`, `deploy/`), and
+2. **A Claude Code plugin** (`azure-easy-auth-google`) whose skill tells an agent how to apply that pattern to another project. It is listed in the `SzTk/claude-patterns` marketplace.
 
-A 4-layer authentication stack for Azure Container Apps:
+How to *apply* the pattern lives in `skills/azure-easy-auth-google/SKILL.md`, not here. This file is about maintaining the repository itself.
 
-1. **Azure Easy Auth** — forces Google login; unauthenticated users are redirected
-2. **nginx email allowlist** — checks `X-MS-CLIENT-PRINCIPAL-NAME` header; blocks non-allowed emails with 403
-3. **Frontend GSI silent sign-in** — obtains a Google ID token without user interaction
-4. **Backend JWT verification** — validates the token directly against Google JWKS (RS256, audience, issuer, email_verified, allowed_emails)
+## Layout
 
-## Key files
+- `.claude-plugin/plugin.json` — plugin manifest (name, version)
+- `skills/azure-easy-auth-google/SKILL.md` — the skill: when to use, design rationale, steps, pitfalls. It points at the reference files via `${CLAUDE_PLUGIN_ROOT}/...`
+- `backend/app/core/auth.py`, `config.py` — the parts meant to be copied
+- `backend/tests/` — unit tests (Google JWKS is stubbed; no network)
+- `frontend/gsi-auth.js`, `frontend/nginx.conf.template`, `deploy/enable-auth.sh`
 
-- `backend/app/core/auth.py` — `require_authorized_user` FastAPI dependency (copy as-is)
-- `backend/app/core/config.py` — `AUTH_ENABLED`, `GOOGLE_CLIENT_ID`, `ALLOWED_EMAILS` settings (copy as-is)
-- `frontend/gsi-auth.js` — `getIdToken()` function; set `GOOGLE_CLIENT_ID` at the top
-- `frontend/nginx.conf.template` — add allowed emails to the `map` block
-- `deploy/enable-auth.sh` — Azure CLI script; all parameters passed as arguments
+## Rules when changing this repo
 
-## How to apply this pattern to a new project
+- **Keep SKILL.md and the code in sync in the same commit.** If you rename/move a reference file, change a setting name, or change behavior, update the file table, steps, and pitfalls in SKILL.md.
+- **Bump `version` in `.claude-plugin/plugin.json`** on every change meant to reach other environments (installed copies only update when the version changes). Do not also put `version` in the marketplace entry.
+- **Update the "最終検証" line in SKILL.md** when you re-run the tests or re-verify on Azure, with the date and what was verified.
+- When a pitfall is found while applying the pattern elsewhere, add it to SKILL.md's 落とし穴 section (with the date it was confirmed).
 
-1. Copy `backend/app/core/auth.py` and `config.py` into the new project's `app/core/`
-2. Add `Depends(require_authorized_user)` to protected FastAPI endpoints
-3. Copy `frontend/gsi-auth.js`; replace `GOOGLE_CLIENT_ID` placeholder
-4. Copy `frontend/nginx.conf.template`; add allowed emails; add proxy location blocks for API endpoints
-5. Copy `deploy/enable-auth.sh`
-6. Set `AUTH_ENABLED=true`, `GOOGLE_CLIENT_ID`, `ALLOWED_EMAILS` as production env vars
+## Checks
 
-## Important constraints
+```bash
+cd backend && uv run --no-project --with-editable ".[dev]" python -m pytest -q
+```
 
-- `GOOGLE_CLIENT_ID` must be the **same value** in `gsi-auth.js` (frontend) and as the `GOOGLE_CLIENT_ID` env var on the backend
-- `allowed_emails` controls access at **both** the nginx layer (map block) and the backend layer; keep them in sync
-- The backend verifies JWTs **independently of Azure** — it calls Google JWKS directly
-- `AUTH_ENABLED=false` (default) disables all backend auth checks; safe for local dev and tests
-- nginx blocks all traffic locally without Easy Auth — test the backend directly at port 8000
+```bash
+claude plugin validate .
+```
+
+Try the skill without installing: `claude --plugin-dir .` from the repo root, then `/azure-easy-auth-google:azure-easy-auth-google`.
